@@ -1,0 +1,163 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlashLearn - Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'decks/style.css' %}">
+</head>
+<body>
+  <nav>
+    <div class="logo">FlashLearn</div>
+    <button class="hamburger" onclick="toggleMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div class="nav-items">
+      <ul>
+        <li><a href="{% url 'decks:home' %}" class="active">Dashboard</a></li>
+        <li><a href="#">My Decks</a></li>
+        <li><a href="#">Progress</a></li>
+        <li><a href="#">Settings</a></li>
+        {% if user.is_authenticated %}
+          <li><a href="{% url 'accounts:logout' %}" class="auth-btn logout-btn">Logout</a></li>
+        {% else %}
+          <li><a href="{% url 'accounts:login' %}" class="auth-btn login-btn">Login</a></li>
+          <li><a href="{% url 'accounts:register' %}" class="auth-btn register-btn">Register</a></li>
+        {% endif %}
+      </ul>
+      <button class="toggle-btn" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
+    </div>
+  </nav>
+
+  <header>
+    <div>
+      <div class="greeting">
+        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="User Avatar" />
+        👋 Welcome back, {{ request.user.first_name|default:request.user.username }}!
+      </div>
+      <div class="stats">
+        <div class="stat-box">
+          <div>Daily Goal</div>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+          <small>{{ daily_cards_reviewed|default:0 }}/20 cards reviewed</small>
+        </div>
+        <div class="stat-box">
+          <div>🔥 {{ streak|default:0 }}-Day Streak</div>
+          <small>Keep it up!</small>
+        </div>
+        <div class="stat-box">
+          <div>Next Review</div>
+          <small>📅 Coming up</small>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="deck-container">
+    {% for deck in user_decks %}
+    <div class="deck-card">
+      <div class="deck-title">{{ deck.title }}</div>
+      <div class="deck-tags">{{ deck.tags }}</div>
+      <img class="deck-thumb" src="{{ deck.image_url }}" alt="{{ deck.title }} cover image">
+      <div class="deck-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: {{ deck.progress }}%;"></div>
+        </div>
+        <small>{{ deck.due_cards }} cards due | {{ deck.mastered_cards }}/{{ deck.total_cards }} mastered</small>
+      </div>
+      <div class="deck-actions">
+        <button class="btn-start" onclick="startReview('{{ deck.id }}');">▶ Start Review</button>
+        <div>📊 🛠</div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% for deck in public_decks %}
+    <div class="deck-card">
+      <div class="deck-title">{{ deck.title }} <small>(Public)</small></div>
+      <div class="deck-tags">{{ deck.tags }}</div>
+      <img class="deck-thumb" src="{{ deck.image_url }}" alt="{{ deck.title }} cover image">
+      <div class="deck-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 0%;"></div>
+        </div>
+        <small>Study this deck</small>
+      </div>
+      <div class="deck-actions">
+        <button class="btn-start" onclick="startReview('{{ deck.id }}');">▶ Start Review</button>
+        <div>📊</div>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- Flashcard Modal -->
+  <div id="reviewModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="deckTitle"></h2>
+        <button class="close-btn" onclick="closeReview()">×</button>
+      </div>
+      
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+        <span class="progress-text">1/10</span>
+      </div>
+
+      <div class="flashcard" id="flashcard">
+        <div class="card-inner">
+          <div class="card-front">
+            <div class="card-content">
+              <p id="cardQuestion"></p>
+            </div>
+            <div class="card-hint">Click to flip</div>
+          </div>
+          <div class="card-back">
+            <div class="card-content">
+              <p id="cardAnswer"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="action-btn wrong" onclick="markCard(false)">
+          <span class="icon">✗</span>
+          <span>Need Review</span>
+        </button>
+        <button class="action-btn correct" onclick="markCard(true)">
+          <span class="icon">✓</span>
+          <span>Got It</span>
+        </button>
+      </div>
+
+      <div class="keyboard-shortcuts">
+        <div class="shortcut">
+          <span class="key">Space</span>
+          <span>Flip Card</span>
+        </div>
+        <div class="shortcut">
+          <span class="key">←</span>
+          <span>Need Review</span>
+        </div>
+        <div class="shortcut">
+          <span class="key">→</span>
+          <span>Got It</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    ✅ {{ daily_progress|default:0 }}% of daily goal complete | 💡 Tip: Study in short bursts for better retention.
+  </footer>
+
+  <script src="{% static 'decks/script.js' %}"></script>
+</body>
+</html>
